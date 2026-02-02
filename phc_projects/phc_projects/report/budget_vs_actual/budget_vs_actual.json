@@ -1,0 +1,51 @@
+{
+ "add_total_row": 1,
+ "columns": [],
+ "creation": "2025-01-01 00:00:00.000000",
+ "disable_prepared_report": 0,
+ "disable_rounded_total": 0,
+ "doctype": "Report",
+ "filters": [
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "mandatory": 0,
+   "options": "Project",
+   "wildcard_filter": 0
+  },
+  {
+   "fieldname": "budget_item_type",
+   "fieldtype": "Select",
+   "label": "Budget Item Type",
+   "mandatory": 0,
+   "options": "\nCivil\nMechanic\nElectric",
+   "wildcard_filter": 0
+  }
+ ],
+ "idx": 0,
+ "is_standard": "No",
+ "json": "{}",
+ "modified": "2025-01-01 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "PHC Projects",
+ "name": "Budget vs Actual",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "query": "",
+ "ref_doctype": "Budget Expense",
+ "report_name": "Budget vs Actual",
+ "report_type": "Script Report",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Projects Manager"
+  },
+  {
+   "role": "Projects User"
+  }
+ ]
+}
+

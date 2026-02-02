@@ -84,6 +84,7 @@ app_license = "mit"
 
 # before_install = "phc_projects.install.before_install"
 # after_install = "phc_projects.install.after_install"
+after_migrate = "phc_projects.phc_projects.setup.after_migrate"
 
 # Uninstallation
 # ------------
@@ -129,21 +130,26 @@ app_license = "mit"
 # ---------------
 # Override standard doctype classes
 
-# override_doctype_class = {
-# 	"ToDo": "custom_app.overrides.CustomToDo"
-# }
+override_doctype_class = {
+	"Purchase Invoice": "phc_projects.phc_projects.overrides.purchase_invoice.PurchaseInvoice"
+}
 
 # Document Events
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	"Purchase Order": {
+		"before_submit": "phc_projects.phc_projects.budget_control.purchase_order_validation.validate_budget_on_po_submit"
+	},
+	"PC Clearance": {
+		"before_submit": "phc_projects.phc_projects.budget_control.purchase_order_validation.validate_budget_on_pc_clearance_submit"
+	},
+	"Purchase Invoice": {
+		"on_submit": "phc_projects.phc_projects.budget_control.purchase_invoice_hooks.update_budget_on_pi_submit",
+		"on_cancel": "phc_projects.phc_projects.budget_control.purchase_invoice_hooks.update_budget_on_pi_cancel"
+	}
+}
 
 # Scheduled Tasks
 # ---------------

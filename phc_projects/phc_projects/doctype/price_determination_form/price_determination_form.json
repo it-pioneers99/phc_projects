@@ -1,0 +1,240 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "PD-.######",
+ "creation": "2025-11-11 14:32:01.091681",
+ "default_view": "List",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "rm_project_name",
+  "contractor_name",
+  "number_of_participants",
+  "value_of_competition_documents",
+  "bid_value",
+  "description",
+  "reason_for_excluding_the_offer__if_any",
+  "column_break_onuk",
+  "initial_evaluation_reference",
+  "activity",
+  "customer_name",
+  "location",
+  "manual_reference",
+  "competition_status",
+  "application_deadline",
+  "project_duration",
+  "cost_details_section",
+  "value",
+  "total_price",
+  "column_break_icgp",
+  "total_costs",
+  "vat_15",
+  "column_break_aaqk",
+  "expected_profit",
+  "total_price_with_vat",
+  "amended_from",
+  "section_break_beov",
+  "quantity_table_items"
+ ],
+ "fields": [
+  {
+   "fetch_from": "initial_evaluation_reference.rm_project_name",
+   "fieldname": "rm_project_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Project Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fetch_from": "initial_evaluation_reference.contractor_name",
+   "fieldname": "contractor_name",
+   "fieldtype": "Data",
+   "label": "Contractor Name"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "number_of_participants",
+   "fieldtype": "Int",
+   "label": "Number of participants in the competition",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "value_of_competition_documents",
+   "fieldtype": "Data",
+   "label": "Value of Competition Documents"
+  },
+  {
+   "fieldname": "bid_value",
+   "fieldtype": "Currency",
+   "label": "Bid value"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "reason_for_excluding_the_offer__if_any",
+   "fieldtype": "Data",
+   "label": "Reason for excluding the offer ( if any )"
+  },
+  {
+   "fieldname": "column_break_onuk",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "initial_evaluation_reference",
+   "fieldtype": "Link",
+   "label": "Initial Evaluation Reference",
+   "options": "Initial Evaluation"
+  },
+  {
+   "fieldname": "activity",
+   "fieldtype": "Link",
+   "label": "Activity",
+   "options": "Activity"
+  },
+  {
+   "fetch_from": "initial_evaluation_reference.customer_name",
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": "Customer Name"
+  },
+  {
+   "fetch_from": "initial_evaluation_reference.location",
+   "fieldname": "location",
+   "fieldtype": "Data",
+   "label": "Location"
+  },
+  {
+   "fieldname": "manual_reference",
+   "fieldtype": "Data",
+   "label": "Manual Reference"
+  },
+  {
+   "fieldname": "competition_status",
+   "fieldtype": "Select",
+   "label": "Competition status",
+   "options": "\nOpen\nWon\nLost"
+  },
+  {
+   "fieldname": "application_deadline",
+   "fieldtype": "Date",
+   "label": "Application Deadline"
+  },
+  {
+   "fieldname": "project_duration",
+   "fieldtype": "Data",
+   "label": "Project Duration"
+  },
+  {
+   "fieldname": "cost_details_section",
+   "fieldtype": "Section Break",
+   "label": "Cost Details"
+  },
+  {
+   "fieldname": "value",
+   "fieldtype": "Currency",
+   "label": "Value"
+  },
+  {
+   "fieldname": "total_price",
+   "fieldtype": "Currency",
+   "label": "Total Price"
+  },
+  {
+   "fieldname": "column_break_icgp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_costs",
+   "fieldtype": "Currency",
+   "label": "Total Costs"
+  },
+  {
+   "fieldname": "vat_15",
+   "fieldtype": "Currency",
+   "label": "VAT 15%"
+  },
+  {
+   "fieldname": "column_break_aaqk",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "expected_profit",
+   "fieldtype": "Currency",
+   "label": "Expected Profit"
+  },
+  {
+   "fieldname": "total_price_with_vat",
+   "fieldtype": "Currency",
+   "label": "Total Price (with VAT)"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Price Determination Form RM",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "section_break_beov",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "quantity_table_items",
+   "fieldtype": "Table",
+   "label": "\u062c\u062f\u0648\u0644 \u0627\u0644\u0643\u0645\u064a\u0627\u062a",
+   "options": "Quantity Table items",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Price Determination Form RM",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [
+  {
+   "link_doctype": "Final Resource Identification Form RM",
+   "link_fieldname": "price_determination_form_reference"
+  }
+ ],
+ "modified": "2025-11-11 14:46:05.996458",
+ "modified_by": "Administrator",
+ "module": "PHC Projects",
+ "name": "Price Determination Form",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
