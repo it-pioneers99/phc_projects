@@ -45,6 +45,11 @@ class BudgetExpense(Document):
 				# If document doesn't exist, set empty value
 				row.budget_item_type = ""
 			
+			# Remove budget_item_source if it exists (for backward compatibility)
+			# This field has been removed from the DocType
+			if hasattr(row, 'budget_item_source'):
+				delattr(row, 'budget_item_source')
+			
 			# Accumulate totals
 			total_budget += row.budget_item_cost
 			total_po += row.used_cost_po
