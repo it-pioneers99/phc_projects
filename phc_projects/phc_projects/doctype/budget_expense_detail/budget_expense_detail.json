@@ -15,7 +15,6 @@
    "budget_item_qty",
    "used_cost_pi",
    "used_cost_pc",
-   "budget_item_source",
    "description"
   ],
  "fields": [
@@ -86,13 +85,6 @@
    "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Used Cost (PC Clearance)",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "budget_item_name.budget_item_source",
-   "fieldname": "budget_item_source",
-   "fieldtype": "Data",
-   "label": "Budget Item Source",
    "read_only": 1
   },
   {

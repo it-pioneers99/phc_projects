@@ -57,11 +57,10 @@ function update_budget_item_details(frm, row) {
 	if (!row.budget_item_name) return;
 	
 	frappe.db.get_value('Budget Expense Item', row.budget_item_name, 
-		['unit_cost', 'budget_item_type', 'budget_item_source'], 
+		['unit_cost', 'budget_item_type'], 
 		function(r) {
 			if (r) {
 				row.budget_item_type = r.budget_item_type;
-				row.budget_item_source = r.budget_item_source || '';
 				calculate_budget_item_cost(frm, row);
 				frm.refresh_field('budget_expense_detail');
 			}

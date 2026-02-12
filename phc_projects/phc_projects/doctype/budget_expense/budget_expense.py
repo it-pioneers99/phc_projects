@@ -36,17 +36,14 @@ class BudgetExpense(Document):
 			# PI is tracked separately but NOT included in the difference
 			row.difference = flt(row.budget_item_cost - (row.used_cost_po + row.used_cost_pc))
 			
-			# Fetch type and source
-			item_data = frappe.db.get_value(
-				"Budget Expense Item",
-				row.budget_item_name,
-				["budget_item_type", "budget_item_source"],
-				as_dict=True
-			)
-			
-			if item_data:
-				row.budget_item_type = item_data.budget_item_type
-				row.budget_item_source = item_data.budget_item_source or ""
+			# Fetch type
+			# Use get_doc to avoid field permission issues
+			try:
+				item_doc = frappe.get_doc("Budget Expense Item", row.budget_item_name)
+				row.budget_item_type = item_doc.budget_item_type or ""
+			except Exception:
+				# If document doesn't exist, set empty value
+				row.budget_item_type = ""
 			
 			# Accumulate totals
 			total_budget += row.budget_item_cost
