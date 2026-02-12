@@ -10,7 +10,6 @@
   "budget_item_name",
   "budget_item_type",
   "column_break_1",
-  "budget_item_source",
   "unit_cost"
  ],
  "fields": [
@@ -31,11 +30,6 @@
   {
    "fieldname": "column_break_1",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "budget_item_source",
-   "fieldtype": "Data",
-   "label": "Budget Item Source"
   },
   {
    "fieldname": "unit_cost",
