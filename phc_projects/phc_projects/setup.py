@@ -127,6 +127,30 @@ def after_migrate():
 				translatable=0,
 			),
 		],
+		"Material Request": [
+			dict(
+				fieldname="budget_expense_type",
+				label="Budget Expense Type",
+				fieldtype="Select",
+				options="Projects\nNot Projects",
+				default="Projects",
+				insert_after="purpose",
+				translatable=0,
+			),
+		],
+		"Material Request Item": [
+			dict(
+				fieldname="budget_expense_item",
+				label="Budget Expense Item",
+				fieldtype="Link",
+				options="Budget Expense Item",
+				insert_after="project",
+				reqd=0,
+				mandatory_depends_on="eval:parent.budget_expense_type=='Projects'",
+				in_list_view=1,
+				translatable=0,
+			),
+		],
 	}
 	
 	create_custom_fields(custom_fields, update=True)

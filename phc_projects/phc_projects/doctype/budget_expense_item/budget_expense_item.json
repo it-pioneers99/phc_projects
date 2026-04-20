@@ -24,7 +24,7 @@
    "fieldname": "budget_item_type",
    "fieldtype": "Select",
    "label": "Budget Item Type",
-   "options": "Civil\nMechanic\nElectric",
+   "options": "Civil\nMechanic\nElectric\nArch",
    "reqd": 1
   },
   {

@@ -19,7 +19,7 @@
    "fieldtype": "Select",
    "label": "Budget Item Type",
    "mandatory": 0,
-   "options": "\nCivil\nMechanic\nElectric",
+   "options": "\nCivil\nMechanic\nElectric\nArch",
    "wildcard_filter": 0
   }
  ],

@@ -142,6 +142,9 @@ doc_events = {
 	"Purchase Order": {
 		"before_submit": "phc_projects.phc_projects.budget_control.purchase_order_validation.validate_budget_on_po_submit"
 	},
+	"Material Request": {
+		"before_submit": "phc_projects.phc_projects.budget_control.purchase_order_validation.validate_budget_on_material_request_submit"
+	},
 	"PC Clearance": {
 		"before_submit": "phc_projects.phc_projects.budget_control.purchase_order_validation.validate_budget_on_pc_clearance_submit"
 	},
