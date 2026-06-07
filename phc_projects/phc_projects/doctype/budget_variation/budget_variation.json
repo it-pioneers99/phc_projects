@@ -1,18 +1,19 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:BE-{project}-{####}",
- "creation": "2025-01-01 00:00:00",
+ "autoname": "format:BV-{project}-{####}",
+ "creation": "2026-05-12 00:00:00.000000",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "budget_expense",
   "project",
   "company",
   "column_break_1",
   "budget_date",
   "section_break_1",
-  "budget_expense_detail",
+  "budget_variation_detail",
   "section_break_totals",
   "total_budget_cost",
   "total_used_po_cost",
@@ -24,9 +25,16 @@
  ],
  "fields": [
   {
-   "fieldname": "project",
+   "fieldname": "budget_expense",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "label": "Budget Expense",
+   "options": "Budget Expense",
+   "reqd": 1
+  },
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
    "label": "Project",
    "options": "Project",
    "reqd": 1
@@ -34,7 +42,6 @@
   {
    "fieldname": "company",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "Company",
    "options": "Company",
    "reqd": 1
@@ -56,10 +63,10 @@
   },
   {
    "allow_on_submit": 1,
-   "fieldname": "budget_expense_detail",
+   "fieldname": "budget_variation_detail",
    "fieldtype": "Table",
-   "label": "Budget Expense Detail",
-   "options": "Budget Expense Detail",
+   "label": "Budget Variation Detail",
+   "options": "Budget Variation Detail",
    "reqd": 1
   },
   {
@@ -111,24 +118,18 @@
    "fieldtype": "Link",
    "label": "Amended From",
    "no_copy": 1,
-   "options": "Budget Expense",
+   "options": "Budget Variation",
    "print_hide": 1,
    "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
- "links": [
-  {
-   "group": "Connections",
-   "link_doctype": "Budget Variation",
-   "link_fieldname": "budget_expense"
-  }
- ],
- "modified": "2026-05-14 12:52:00.955052",
+ "links": [],
+ "modified": "2026-05-12 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "PHC Projects",
- "name": "Budget Expense",
+ "name": "Budget Variation",
  "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
@@ -167,7 +168,6 @@
    "role": "Projects User"
   }
  ],
- "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

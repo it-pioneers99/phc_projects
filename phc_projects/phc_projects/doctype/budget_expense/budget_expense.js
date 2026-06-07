@@ -3,35 +3,43 @@
 
 frappe.ui.form.on('Budget Expense', {
 	refresh: function(frm) {
-		// Add refresh button to recalculate budget usage
 		if (!frm.is_new()) {
-			frm.add_custom_button(__('Refresh Budget Usage'), function() {
-				frappe.call({
-					method: 'phc_projects.phc_projects.doctype.budget_expense.budget_expense.refresh_budget_usage',
-					args: {
-						name: frm.doc.name
-					},
-					freeze: true,
-					freeze_message: __('Refreshing budget usage from Purchase Orders and Purchase Invoices...'),
-					callback: function(r) {
-						if (r.message) {
-							frappe.show_alert({
-								message: r.message.message || __('Budget usage refreshed successfully'),
-								indicator: 'green'
-							}, 3);
-							// Reload the form to show updated values
-							frm.reload_doc();
+			if (frm.doc.docstatus !== 2) {
+				frm.add_custom_button(__('Create Budget Variation'), function() {
+					frappe.call({
+						method: 'phc_projects.phc_projects.doctype.budget_expense.budget_expense.make_budget_variation',
+						args: { budget_expense: frm.doc.name },
+						freeze: true,
+						freeze_message: __('Creating Budget Variation...'),
+						callback: function(r) {
+							if (r.message) {
+								frappe.show_alert({ message: __('Budget Variation created'), indicator: 'green' }, 3);
+								frappe.set_route('Form', 'Budget Variation', r.message);
+							}
 						}
-					},
-					error: function(r) {
-						frappe.msgprint({
-							title: __('Error'),
-							message: __('Failed to refresh budget usage. Please try again.'),
-							indicator: 'red'
-						});
-					}
-				});
-			}, __('Actions'));
+					});
+				}, __('Actions'));
+			}
+
+			if (frm.doc.docstatus === 1) {
+				frm.add_custom_button(__('Refresh Budget Expense'), function() {
+					frappe.call({
+						method: 'phc_projects.phc_projects.doctype.budget_expense.budget_expense.refresh_budget_expense_from_variation',
+						args: { budget_expense_name: frm.doc.name },
+						freeze: true,
+						freeze_message: __('Applying values from submitted Budget Variation...'),
+						callback: function(r) {
+							if (r.message) {
+								frappe.show_alert({
+									message: r.message.message || __('Budget Expense updated'),
+									indicator: 'green'
+								}, 3);
+								frm.reload_doc();
+							}
+						}
+					});
+				}, __('Actions'));
+			}
 		}
 	},
 	
