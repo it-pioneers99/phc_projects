@@ -65,6 +65,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "budget_item_name.budget_item_type",
    "fieldname": "budget_item_type",
    "fieldtype": "Select",
