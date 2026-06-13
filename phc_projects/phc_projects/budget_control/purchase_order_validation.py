@@ -5,6 +5,57 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
+from phc_projects.phc_projects.doctype.budget_expense.budget_expense import (
+	_get_latest_submitted_budget_variation_name,
+)
+
+
+def get_effective_budget_for_item(project, budget_item):
+	"""
+	Return budget amounts for a project + budget item.
+
+	Uses the latest submitted Budget Variation per Budget Expense when available;
+	otherwise falls back to submitted Budget Expense Detail.
+	"""
+	total_budget = used_po = used_pi = used_pc = 0
+	found = False
+
+	budget_expenses = frappe.get_all(
+		"Budget Expense",
+		filters={"project": project, "docstatus": 1},
+		pluck="name",
+	)
+
+	for be_name in budget_expenses:
+		bv_name = _get_latest_submitted_budget_variation_name(be_name)
+		detail_doctype = "Budget Variation Detail" if bv_name else "Budget Expense Detail"
+		parent = bv_name or be_name
+
+		row = frappe.db.get_value(
+			detail_doctype,
+			{"parent": parent, "budget_item_name": budget_item},
+			["budget_item_cost", "used_cost_po", "used_cost_pi", "used_cost_pc"],
+			as_dict=True,
+		)
+		if not row:
+			continue
+
+		found = True
+		total_budget += flt(row.budget_item_cost)
+		used_po += flt(row.used_cost_po)
+		used_pi += flt(row.used_cost_pi)
+		used_pc += flt(row.used_cost_pc)
+
+	if not found:
+		return None
+
+	return {
+		"total_budget": total_budget,
+		"used_po": used_po,
+		"used_pi": used_pi,
+		"used_pc": used_pc,
+	}
+
 
 def validate_budget_on_po_submit(doc, method):
 	"""
@@ -127,24 +178,9 @@ def validate_budget_on_material_request_submit(doc, method):
 
 	# Validate each project + budget item
 	for (project, budget_item), mr_amount in budget_map.items():
-		# Get budget from submitted Budget Expense documents
-		budget_data = frappe.db.sql("""
-			SELECT
-				bed.budget_item_name,
-				SUM(bed.budget_item_cost) as total_budget,
-				SUM(bed.used_cost_po) as used_po,
-				SUM(bed.used_cost_pi) as used_pi,
-				SUM(bed.used_cost_pc) as used_pc,
-				be.project
-			FROM `tabBudget Expense Detail` bed
-			INNER JOIN `tabBudget Expense` be ON bed.parent = be.name
-			WHERE bed.budget_item_name = %s
-			AND be.project = %s
-			AND be.docstatus = 1
-			GROUP BY bed.budget_item_name, be.project
-		""", (budget_item, project), as_dict=True)
+		budget_info = get_effective_budget_for_item(project, budget_item)
 
-		if not budget_data:
+		if not budget_info:
 			frappe.throw(
 				_("No budget found for Budget Expense Item: {0} in Project: {1}. Please create a Budget Expense document first.").format(
 					budget_item, project
@@ -152,11 +188,10 @@ def validate_budget_on_material_request_submit(doc, method):
 				title=_("Budget Not Found")
 			)
 
-		budget_info = budget_data[0]
-		total_budget = flt(budget_info.total_budget or 0)
-		used_po = flt(budget_info.used_po or 0)
-		used_pi = flt(budget_info.used_pi or 0)
-		used_pc = flt(budget_info.used_pc or 0)
+		total_budget = flt(budget_info["total_budget"])
+		used_po = flt(budget_info["used_po"])
+		used_pi = flt(budget_info["used_pi"])
+		used_pc = flt(budget_info["used_pc"])
 
 		# Calculate total used (PO + PI + PC) and available budget
 		total_used = used_po + used_pi + used_pc
