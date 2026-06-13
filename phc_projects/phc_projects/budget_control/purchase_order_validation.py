@@ -57,6 +57,11 @@ def get_effective_budget_for_item(project, budget_item):
 	}
 
 
+def get_committed_budget_usage(used_po, used_pc):
+	"""Committed budget is PO + PC only; PI is tracked separately (see Budget Expense)."""
+	return flt(used_po) + flt(used_pc)
+
+
 def validate_budget_on_po_submit(doc, method):
 	"""
 	Prevent Purchase Order submission if budget is exceeded
@@ -116,20 +121,20 @@ def validate_budget_on_po_submit(doc, method):
 		used_pi = flt(budget_info.used_pi or 0)
 		used_pc = flt(budget_info.used_pc or 0)
 		
-		# Calculate total used (PO + PI + PC) and available budget
-		total_used = used_po + used_pi + used_pc
-		available_budget = total_budget - total_used
-		
+		# Budget commitment is PO + PC only; PI is informational (same as Budget Expense)
+		total_committed = get_committed_budget_usage(used_po, used_pc)
+		available_budget = total_budget - total_committed
+
 		# Check if this PO would exceed budget
-		if total_used + po_amount > total_budget:
-			exceeded_amount = (total_used + po_amount) - total_budget
+		if total_committed + po_amount > total_budget:
+			exceeded_amount = (total_committed + po_amount) - total_budget
 			frappe.throw(
 				_("Budget exceeded for Budget Expense Item: <b>{0}</b><br><br>"
 				  "Total Budget: {1}<br>"
 				  "Already Used (PO): {2}<br>"
 				  "Already Used (PI): {3}<br>"
 				  "Already Used (PC): {4}<br>"
-				  "Total Used: {5}<br>"
+				  "Committed (PO + PC): {5}<br>"
 				  "This PO Amount: {6}<br>"
 				  "Available Budget: {7}<br>"
 				  "<b>Exceeded by: {8}</b>").format(
@@ -138,7 +143,7 @@ def validate_budget_on_po_submit(doc, method):
 					frappe.format(used_po, {"fieldtype": "Currency"}),
 					frappe.format(used_pi, {"fieldtype": "Currency"}),
 					frappe.format(used_pc, {"fieldtype": "Currency"}),
-					frappe.format(total_used, {"fieldtype": "Currency"}),
+					frappe.format(total_committed, {"fieldtype": "Currency"}),
 					frappe.format(po_amount, {"fieldtype": "Currency"}),
 					frappe.format(available_budget, {"fieldtype": "Currency"}),
 					frappe.format(exceeded_amount, {"fieldtype": "Currency"})
@@ -193,20 +198,20 @@ def validate_budget_on_material_request_submit(doc, method):
 		used_pi = flt(budget_info["used_pi"])
 		used_pc = flt(budget_info["used_pc"])
 
-		# Calculate total used (PO + PI + PC) and available budget
-		total_used = used_po + used_pi + used_pc
-		available_budget = total_budget - total_used
+		# Budget commitment is PO + PC only; PI is informational (same as Budget Expense)
+		total_committed = get_committed_budget_usage(used_po, used_pc)
+		available_budget = total_budget - total_committed
 
 		# Check if this Material Request would exceed budget
-		if total_used + mr_amount > total_budget:
-			exceeded_amount = (total_used + mr_amount) - total_budget
+		if total_committed + mr_amount > total_budget:
+			exceeded_amount = (total_committed + mr_amount) - total_budget
 			frappe.throw(
 				_("Budget exceeded for Budget Expense Item: <b>{0}</b><br><br>"
 				  "Total Budget: {1}<br>"
 				  "Already Used (PO): {2}<br>"
 				  "Already Used (PI): {3}<br>"
 				  "Already Used (PC): {4}<br>"
-				  "Total Used: {5}<br>"
+				  "Committed (PO + PC): {5}<br>"
 				  "This Material Request Amount: {6}<br>"
 				  "Available Budget: {7}<br>"
 				  "<b>Exceeded by: {8}</b>").format(
@@ -215,7 +220,7 @@ def validate_budget_on_material_request_submit(doc, method):
 					frappe.format(used_po, {"fieldtype": "Currency"}),
 					frappe.format(used_pi, {"fieldtype": "Currency"}),
 					frappe.format(used_pc, {"fieldtype": "Currency"}),
-					frappe.format(total_used, {"fieldtype": "Currency"}),
+					frappe.format(total_committed, {"fieldtype": "Currency"}),
 					frappe.format(mr_amount, {"fieldtype": "Currency"}),
 					frappe.format(available_budget, {"fieldtype": "Currency"}),
 					frappe.format(exceeded_amount, {"fieldtype": "Currency"})
@@ -283,20 +288,20 @@ def validate_budget_on_pc_clearance_submit(doc, method):
 		used_pi = flt(budget_info.used_pi or 0)
 		used_pc = flt(budget_info.used_pc or 0)
 		
-		# Calculate total used (PO + PI + PC) and available budget
-		total_used = used_po + used_pi + used_pc
-		available_budget = total_budget - total_used
-		
+		# Budget commitment is PO + PC only; PI is informational (same as Budget Expense)
+		total_committed = get_committed_budget_usage(used_po, used_pc)
+		available_budget = total_budget - total_committed
+
 		# Check if this PC Clearance would exceed budget
-		if total_used + pc_amount > total_budget:
-			exceeded_amount = (total_used + pc_amount) - total_budget
+		if total_committed + pc_amount > total_budget:
+			exceeded_amount = (total_committed + pc_amount) - total_budget
 			frappe.throw(
 				_("Budget exceeded for Budget Expense Item: <b>{0}</b><br><br>"
 				  "Total Budget: {1}<br>"
 				  "Already Used (PO): {2}<br>"
 				  "Already Used (PI): {3}<br>"
 				  "Already Used (PC): {4}<br>"
-				  "Total Used: {5}<br>"
+				  "Committed (PO + PC): {5}<br>"
 				  "This PC Clearance Amount: {6}<br>"
 				  "Available Budget: {7}<br>"
 				  "<b>Exceeded by: {8}</b>").format(
@@ -305,7 +310,7 @@ def validate_budget_on_pc_clearance_submit(doc, method):
 					frappe.format(used_po, {"fieldtype": "Currency"}),
 					frappe.format(used_pi, {"fieldtype": "Currency"}),
 					frappe.format(used_pc, {"fieldtype": "Currency"}),
-					frappe.format(total_used, {"fieldtype": "Currency"}),
+					frappe.format(total_committed, {"fieldtype": "Currency"}),
 					frappe.format(pc_amount, {"fieldtype": "Currency"}),
 					frappe.format(available_budget, {"fieldtype": "Currency"}),
 					frappe.format(exceeded_amount, {"fieldtype": "Currency"})
