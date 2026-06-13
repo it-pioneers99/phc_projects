@@ -6,26 +6,16 @@ from erpnext.accounts.doctype.purchase_invoice.purchase_invoice import PurchaseI
 
 
 class PurchaseInvoice(ERPNextPurchaseInvoice):
-	"""
-	Override Purchase Invoice to add missing methods and budget cost updates
-	"""
-	
+	"""Override Purchase Invoice to add missing stub methods."""
+
 	def update_project_costs(self):
-		"""
-		Stub method to prevent AttributeError
-		Budget costs are updated via hooks in purchase_invoice_hooks.py
-		"""
-		pass
-	
-	def update_project_estimated_cost_from_actual_costs(self):
-		"""
-		Stub method to prevent AttributeError
-		"""
-		pass
-	
-	def update_project_all_expenses_from_cost_center(self):
-		"""
-		Stub method to prevent AttributeError
-		"""
+		"""Stub method to prevent AttributeError."""
 		pass
 
+	def update_project_estimated_cost_from_actual_costs(self):
+		"""Stub method to prevent AttributeError."""
+		pass
+
+	def update_project_all_expenses_from_cost_center(self):
+		"""Stub method to prevent AttributeError."""
+		pass

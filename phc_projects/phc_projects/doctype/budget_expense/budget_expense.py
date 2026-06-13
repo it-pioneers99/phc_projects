@@ -14,7 +14,7 @@ class BudgetExpense(Document):
 	
 	def calculate_totals(self):
 		"""Calculate totals from child table"""
-		total_budget = total_po = total_pi = total_pc = total_diff = 0
+		total_budget = total_po = total_pc = total_diff = 0
 		
 		for row in self.budget_expense_detail:
 			# Get unit cost from Budget Expense Item
@@ -27,13 +27,11 @@ class BudgetExpense(Document):
 			# Calculate budget item cost
 			row.budget_item_cost = flt(unit_cost * (row.budget_item_qty or 0))
 			
-			# Get used costs from PO, PI, and PC Clearance separately
+			# Get used costs from PO and PC Clearance
 			row.used_cost_po = self.get_used_cost_po(row.budget_item_name)
-			row.used_cost_pi = self.get_used_cost_pi(row.budget_item_name)
 			row.used_cost_pc = self.get_used_cost_pc(row.budget_item_name)
 			
-			# Calculate difference as: Budget - (PO + PC)
-			# PI is tracked separately but NOT included in the difference
+			# Difference = Budget - (PO + PC)
 			row.difference = flt(row.budget_item_cost - (row.used_cost_po + row.used_cost_pc))
 			
 			# Fetch type
@@ -53,14 +51,12 @@ class BudgetExpense(Document):
 			# Accumulate totals
 			total_budget += row.budget_item_cost
 			total_po += row.used_cost_po
-			total_pi += row.used_cost_pi
 			total_pc += row.used_cost_pc
 			total_diff += row.difference
 		
 		# Update parent totals
 		self.total_budget_cost = total_budget
 		self.total_used_po_cost = total_po
-		self.total_used_pi_cost = total_pi
 		self.total_used_pc_cost = total_pc
 		self.total_difference = total_diff
 	
@@ -80,24 +76,6 @@ class BudgetExpense(Document):
 		""", (budget_item_name, self.project, self.project))
 		
 		return flt(result[0][0] if result else 0)
-	
-	def get_used_cost_pi(self, budget_item_name):
-		"""Get used cost from Purchase Invoices only"""
-		if not self.project:
-			return 0
-		
-		# From Purchase Invoice
-		# Check both parent project and item project (item project takes precedence)
-		pi_result = frappe.db.sql("""
-			SELECT COALESCE(SUM(pii.amount), 0)
-			FROM `tabPurchase Invoice Item` pii
-			INNER JOIN `tabPurchase Invoice` pi ON pii.parent = pi.name
-			WHERE pii.budget_expense_item = %s
-			AND (pi.project = %s OR pii.project = %s)
-			AND pi.docstatus = 1
-		""", (budget_item_name, self.project, self.project))
-		
-		return flt(pi_result[0][0] if pi_result else 0)
 	
 	def get_used_cost_pc(self, budget_item_name):
 		"""Get used cost from PC Clearance only"""
@@ -129,7 +107,6 @@ DETAIL_FIELDS_SYNC_FROM_VARIATION = (
 	"difference",
 	"budget_item_type",
 	"budget_item_qty",
-	"used_cost_pi",
 	"used_cost_pc",
 	"description",
 )
@@ -219,7 +196,7 @@ def _sync_expense_detail_from_budget_variation(be, bv_name):
 @frappe.whitelist()
 def refresh_budget_usage(name):
 	"""
-	Refresh budget usage from PO/PI/PC. If a submitted Budget Variation exists for this
+	Refresh budget usage from PO/PC. If a submitted Budget Variation exists for this
 	Budget Expense, apply its detail lines first (including budget_item_qty), then recalculate.
 	"""
 	doc = frappe.get_doc("Budget Expense", name)
@@ -254,7 +231,6 @@ def refresh_budget_usage(name):
 		"variation_lines_applied": total_synced,
 		"total_budget_cost": doc.total_budget_cost,
 		"total_used_po_cost": doc.total_used_po_cost,
-		"total_used_pi_cost": doc.total_used_pi_cost,
 		"total_used_pc_cost": doc.total_used_pc_cost,
 		"total_difference": doc.total_difference,
 	}
@@ -284,7 +260,6 @@ def make_budget_variation(budget_expense):
 				"difference": row.difference,
 				"budget_item_type": row.budget_item_type,
 				"budget_item_qty": row.budget_item_qty,
-				"used_cost_pi": row.used_cost_pi,
 				"used_cost_pc": row.used_cost_pc,
 				"description": row.get("description"),
 			},
@@ -327,7 +302,6 @@ def refresh_budget_expense_from_variation(budget_expense_name):
 		"variation_lines_applied": total_synced,
 		"total_budget_cost": be.total_budget_cost,
 		"total_used_po_cost": be.total_used_po_cost,
-		"total_used_pi_cost": be.total_used_pi_cost,
 		"total_used_pc_cost": be.total_used_pc_cost,
 		"total_difference": be.total_difference,
 	}

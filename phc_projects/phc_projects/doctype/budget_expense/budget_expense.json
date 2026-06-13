@@ -17,7 +17,6 @@
   "total_budget_cost",
   "total_used_po_cost",
   "column_break_totals",
-  "total_used_pi_cost",
   "total_used_pc_cost",
   "total_difference",
   "amended_from"
@@ -84,13 +83,6 @@
   {
    "fieldname": "column_break_totals",
    "fieldtype": "Column Break"
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "total_used_pi_cost",
-   "fieldtype": "Currency",
-   "label": "Total Used PI Cost",
-   "read_only": 1
   },
   {
    "allow_on_submit": 1,

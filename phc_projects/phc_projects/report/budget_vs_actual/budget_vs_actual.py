@@ -47,14 +47,14 @@ def get_columns():
 			"width": 120
 		},
 		{
-			"label": _("PI/PC Actual"),
-			"fieldname": "pi_actual",
+			"label": _("PC Actual"),
+			"fieldname": "pc_actual",
 			"fieldtype": "Currency",
 			"width": 120
 		},
 		{
-			"label": _("Total Actual"),
-			"fieldname": "total_actual",
+			"label": _("Committed (PO + PC)"),
+			"fieldname": "total_committed",
 			"fieldtype": "Currency",
 			"width": 120
 		},
@@ -87,7 +87,6 @@ def get_data(filters):
 	
 	where_clause = " AND " + " AND ".join(conditions) if conditions else ""
 	
-	# Get budget data
 	budget_query = """
 		SELECT
 			be.project,
@@ -95,7 +94,7 @@ def get_data(filters):
 			bed.budget_item_type,
 			SUM(bed.budget_item_cost) as budget_cost,
 			SUM(bed.used_cost_po) as used_po,
-			SUM(bed.used_cost_pi) as used_pi
+			SUM(bed.used_cost_pc) as used_pc
 		FROM `tabBudget Expense Detail` bed
 		INNER JOIN `tabBudget Expense` be ON bed.parent = be.name
 		WHERE be.docstatus = 1
@@ -106,16 +105,14 @@ def get_data(filters):
 	
 	budget_data = frappe.db.sql(budget_query, filters, as_dict=True)
 	
-	# Process and format data
 	result = []
 	for row in budget_data:
 		budget_cost = flt(row.budget_cost or 0)
 		po_actual = flt(row.used_po or 0)
-		pi_actual = flt(row.used_pi or 0)
-		total_actual = po_actual + pi_actual
-		difference = budget_cost - total_actual
+		pc_actual = flt(row.used_pc or 0)
+		total_committed = po_actual + pc_actual
+		difference = budget_cost - total_committed
 		
-		# Determine status
 		if difference < 0:
 			status = "Over Budget"
 		elif difference == 0:
@@ -129,11 +126,10 @@ def get_data(filters):
 			"budget_item_type": row.budget_item_type,
 			"budget_cost": budget_cost,
 			"po_actual": po_actual,
-			"pi_actual": pi_actual,
-			"total_actual": total_actual,
+			"pc_actual": pc_actual,
+			"total_committed": total_committed,
 			"difference": difference,
 			"status": status
 		})
 	
 	return result
-

@@ -14,7 +14,7 @@ class BudgetVariation(Document):
 
 	def calculate_totals(self):
 		"""Same logic as Budget Expense: derive costs and usage from project and items."""
-		total_budget = total_po = total_pi = total_pc = total_diff = 0
+		total_budget = total_po = total_pc = total_diff = 0
 
 		for row in self.budget_variation_detail:
 			unit_cost = flt(
@@ -23,7 +23,6 @@ class BudgetVariation(Document):
 
 			row.budget_item_cost = flt(unit_cost * (row.budget_item_qty or 0))
 			row.used_cost_po = self.get_used_cost_po(row.budget_item_name)
-			row.used_cost_pi = self.get_used_cost_pi(row.budget_item_name)
 			row.used_cost_pc = self.get_used_cost_pc(row.budget_item_name)
 			row.difference = flt(row.budget_item_cost - (row.used_cost_po + row.used_cost_pc))
 
@@ -38,13 +37,11 @@ class BudgetVariation(Document):
 
 			total_budget += row.budget_item_cost
 			total_po += row.used_cost_po
-			total_pi += row.used_cost_pi
 			total_pc += row.used_cost_pc
 			total_diff += row.difference
 
 		self.total_budget_cost = total_budget
 		self.total_used_po_cost = total_po
-		self.total_used_pi_cost = total_pi
 		self.total_used_pc_cost = total_pc
 		self.total_difference = total_diff
 
@@ -65,24 +62,6 @@ class BudgetVariation(Document):
 		)
 
 		return flt(result[0][0] if result else 0)
-
-	def get_used_cost_pi(self, budget_item_name):
-		if not self.project:
-			return 0
-
-		pi_result = frappe.db.sql(
-			"""
-			SELECT COALESCE(SUM(pii.amount), 0)
-			FROM `tabPurchase Invoice Item` pii
-			INNER JOIN `tabPurchase Invoice` pi ON pii.parent = pi.name
-			WHERE pii.budget_expense_item = %s
-			AND (pi.project = %s OR pii.project = %s)
-			AND pi.docstatus = 1
-		""",
-			(budget_item_name, self.project, self.project),
-		)
-
-		return flt(pi_result[0][0] if pi_result else 0)
 
 	def get_used_cost_pc(self, budget_item_name):
 		if not self.project:

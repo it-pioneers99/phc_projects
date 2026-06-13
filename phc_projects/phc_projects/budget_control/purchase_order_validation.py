@@ -17,7 +17,7 @@ def get_effective_budget_for_item(project, budget_item):
 	Uses the latest submitted Budget Variation per Budget Expense when available;
 	otherwise falls back to submitted Budget Expense Detail.
 	"""
-	total_budget = used_po = used_pi = used_pc = 0
+	total_budget = used_po = used_pc = 0
 	found = False
 
 	budget_expenses = frappe.get_all(
@@ -34,7 +34,7 @@ def get_effective_budget_for_item(project, budget_item):
 		row = frappe.db.get_value(
 			detail_doctype,
 			{"parent": parent, "budget_item_name": budget_item},
-			["budget_item_cost", "used_cost_po", "used_cost_pi", "used_cost_pc"],
+			["budget_item_cost", "used_cost_po", "used_cost_pc"],
 			as_dict=True,
 		)
 		if not row:
@@ -43,7 +43,6 @@ def get_effective_budget_for_item(project, budget_item):
 		found = True
 		total_budget += flt(row.budget_item_cost)
 		used_po += flt(row.used_cost_po)
-		used_pi += flt(row.used_cost_pi)
 		used_pc += flt(row.used_cost_pc)
 
 	if not found:
@@ -52,13 +51,12 @@ def get_effective_budget_for_item(project, budget_item):
 	return {
 		"total_budget": total_budget,
 		"used_po": used_po,
-		"used_pi": used_pi,
 		"used_pc": used_pc,
 	}
 
 
 def get_committed_budget_usage(used_po, used_pc):
-	"""Difference = Budget - (PO + PC). PI is tracked separately, not against budget."""
+	"""Difference = Budget - (PO + PC)."""
 	return flt(used_po) + flt(used_pc)
 
 
@@ -67,7 +65,7 @@ def get_available_budget(total_budget, used_po, used_pc):
 	return flt(total_budget) - committed, committed
 
 
-def throw_budget_exceeded(budget_item, total_budget, used_po, used_pi, used_pc, doc_amount, doc_label):
+def throw_budget_exceeded(budget_item, total_budget, used_po, used_pc, doc_amount, doc_label):
 	available_budget, committed = get_available_budget(total_budget, used_po, used_pc)
 	exceeded_amount = (committed + doc_amount) - flt(total_budget)
 	frappe.throw(
@@ -76,15 +74,13 @@ def throw_budget_exceeded(budget_item, total_budget, used_po, used_pi, used_pc, 
 		  "Used Cost (PO): {2}<br>"
 		  "Used Cost (PC): {3}<br>"
 		  "Difference (Budget - PO - PC): {4}<br>"
-		  "Used Cost (PI): {5}<br>"
-		  "This {6} Amount: {7}<br>"
-		  "<b>Exceeded by: {8}</b>").format(
+		  "This {5} Amount: {6}<br>"
+		  "<b>Exceeded by: {7}</b>").format(
 			budget_item,
 			frappe.format(total_budget, {"fieldtype": "Currency"}),
 			frappe.format(used_po, {"fieldtype": "Currency"}),
 			frappe.format(used_pc, {"fieldtype": "Currency"}),
 			frappe.format(available_budget, {"fieldtype": "Currency"}),
-			frappe.format(used_pi, {"fieldtype": "Currency"}),
 			doc_label,
 			frappe.format(doc_amount, {"fieldtype": "Currency"}),
 			frappe.format(exceeded_amount, {"fieldtype": "Currency"}),
@@ -94,7 +90,7 @@ def throw_budget_exceeded(budget_item, total_budget, used_po, used_pi, used_pc, 
 
 
 def check_budget_for_item(project, budget_item, amount, doc_label):
-	"""Validate item budget: Difference = Budget - (PO + PC). PI is informational only."""
+	"""Validate item budget: Difference = Budget - (PO + PC)."""
 	budget_info = get_effective_budget_for_item(project, budget_item)
 
 	if not budget_info:
@@ -107,13 +103,12 @@ def check_budget_for_item(project, budget_item, amount, doc_label):
 
 	total_budget = flt(budget_info["total_budget"])
 	used_po = flt(budget_info["used_po"])
-	used_pi = flt(budget_info["used_pi"])
 	used_pc = flt(budget_info["used_pc"])
 	_, committed = get_available_budget(total_budget, used_po, used_pc)
 
 	if committed + amount > total_budget:
 		throw_budget_exceeded(
-			budget_item, total_budget, used_po, used_pi, used_pc, amount, doc_label
+			budget_item, total_budget, used_po, used_pc, amount, doc_label
 		)
 
 

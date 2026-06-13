@@ -148,10 +148,6 @@ doc_events = {
 	"PC Clearance": {
 		"before_submit": "phc_projects.phc_projects.budget_control.purchase_order_validation.validate_budget_on_pc_clearance_submit"
 	},
-	"Purchase Invoice": {
-		"on_submit": "phc_projects.phc_projects.budget_control.purchase_invoice_hooks.update_budget_on_pi_submit",
-		"on_cancel": "phc_projects.phc_projects.budget_control.purchase_invoice_hooks.update_budget_on_pi_cancel"
-	}
 }
 
 # Scheduled Tasks
