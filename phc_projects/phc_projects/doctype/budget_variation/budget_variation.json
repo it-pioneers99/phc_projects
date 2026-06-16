@@ -12,6 +12,7 @@
   "company",
   "column_break_1",
   "budget_date",
+  "approval_warning_accepted",
   "section_break_1",
   "budget_variation_detail",
   "section_break_totals",
@@ -54,6 +55,14 @@
    "fieldname": "budget_date",
    "fieldtype": "Date",
    "label": "Budget Date"
+  },
+  {
+   "default": "0",
+   "fieldname": "approval_warning_accepted",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Approval Warning Accepted",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_1",

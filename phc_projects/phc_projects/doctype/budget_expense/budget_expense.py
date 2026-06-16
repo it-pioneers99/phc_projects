@@ -10,7 +10,13 @@ from frappe.utils import flt
 class BudgetExpense(Document):
 	def validate(self):
 		self.calculate_totals()
+		self.set_first_total_budget()
 		self.update_budget_usage()
+
+	def set_first_total_budget(self):
+		"""Capture initial total budget once and keep it immutable."""
+		if not flt(self.first_total_budget):
+			self.first_total_budget = flt(self.total_budget_cost)
 	
 	def calculate_totals(self):
 		"""Calculate totals from child table"""

@@ -11,6 +11,46 @@ class BudgetVariation(Document):
 	def validate(self):
 		self.calculate_totals()
 		self.update_budget_usage()
+		self.validate_variation_limits()
+
+	def before_submit(self):
+		self.validate_variation_limits(on_submit=True)
+
+	def validate_variation_limits(self, on_submit=False):
+		"""
+		Allowed variation limits against Budget Expense first_total_budget:
+		- Maximum: +10%
+		- Minimum: -20%
+		"""
+		if not self.budget_expense:
+			return
+
+		first_total_budget = flt(
+			frappe.db.get_value("Budget Expense", self.budget_expense, "first_total_budget")
+		)
+		if not first_total_budget:
+			first_total_budget = flt(
+				frappe.db.get_value("Budget Expense", self.budget_expense, "total_budget_cost")
+			)
+		if not first_total_budget:
+			return
+
+		min_allowed = flt(first_total_budget * 0.8)
+		max_allowed = flt(first_total_budget * 1.1)
+		out_of_range = flt(self.total_budget_cost) < min_allowed or flt(self.total_budget_cost) > max_allowed
+
+		# Keep approval flag meaningful only when out of range.
+		if not out_of_range:
+			self.approval_warning_accepted = 0
+			return
+
+		if on_submit and not self.approval_warning_accepted:
+			frappe.throw(
+				_(
+					"Variation Total Budget is outside allowed range ({0} to {1}) based on First Total Budget ({2}). "
+					"Please accept the approval warning before submitting."
+				).format(min_allowed, max_allowed, first_total_budget)
+			)
 
 	def calculate_totals(self):
 		"""Same logic as Budget Expense: derive costs and usage from project and items."""
