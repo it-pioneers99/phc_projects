@@ -118,6 +118,17 @@ def after_migrate():
 				translatable=0,
 			),
 		],
+		"Purchase Invoice": [
+			dict(
+				fieldname="budget_expense_type",
+				label="Budget Expense Type",
+				fieldtype="Select",
+				options="Projects\nNot Projects",
+				default="Projects",
+				insert_after="project",
+				translatable=0,
+			),
+		],
 		"Purchase Invoice Item": [
 			dict(
 				fieldname="budget_expense_item",
@@ -125,7 +136,10 @@ def after_migrate():
 				fieldtype="Link",
 				options="Budget Expense Item",
 				insert_after="project",
-				reqd=1,
+				reqd=0,
+				depends_on="eval:parent.budget_expense_type=='Projects'",
+				mandatory_depends_on="eval:parent.budget_expense_type=='Projects'",
+				in_list_view=1,
 				translatable=0,
 			),
 		],
