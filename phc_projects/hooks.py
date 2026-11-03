@@ -27,6 +27,10 @@ app_license = "mit"
 # include js, css files in header of desk.html
 # app_include_css = "/assets/phc_projects/css/phc_projects.css"
 # app_include_js = "/assets/phc_projects/js/phc_projects.js"
+app_include_js = [
+	"/assets/phc_projects/js/budget_expense_item_description.js",
+	"/assets/phc_projects/js/cost_center_allocation.js",
+]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/phc_projects/css/phc_projects.css"
@@ -145,10 +149,12 @@ override_doctype_class = {
 
 doc_events = {
 	"Purchase Order": {
-		"before_submit": "phc_projects.phc_projects.budget_control.purchase_order_validation.validate_budget_on_po_submit"
+		"validate": "phc_projects.phc_projects.cost_center_allocation.validate_transaction",
+		"before_submit": "phc_projects.phc_projects.budget_control.purchase_order_validation.validate_budget_on_po_submit",
 	},
 	"Material Request": {
-		"before_submit": "phc_projects.phc_projects.budget_control.purchase_order_validation.validate_budget_on_material_request_submit"
+		"validate": "phc_projects.phc_projects.cost_center_allocation.validate_transaction",
+		"before_submit": "phc_projects.phc_projects.budget_control.purchase_order_validation.validate_budget_on_material_request_submit",
 	},
 	"PC Clearance": {
 		"before_submit": "phc_projects.phc_projects.budget_control.purchase_order_validation.validate_budget_on_pc_clearance_submit"

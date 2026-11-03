@@ -8,6 +8,7 @@
  "engine": "InnoDB",
  "field_order": [
   "project",
+  "project_name",
   "company",
   "column_break_1",
   "budget_date",
@@ -26,10 +27,18 @@
   {
    "fieldname": "project",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "Project",
    "options": "Project",
    "reqd": 1
+  },
+  {
+   "fetch_from": "project.project_name",
+   "fieldname": "project_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Project Name",
+   "read_only": 1
   },
   {
    "fieldname": "company",

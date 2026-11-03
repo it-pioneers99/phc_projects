@@ -23,6 +23,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Budget Item Name",
+   "link_filters": "[[\"Budget Expense Item\",\"project\",\"=\",\"eval:parent.project\"]]",
    "options": "Budget Expense Item",
    "reqd": 1
   },
@@ -83,7 +84,9 @@
    "allow_on_submit": 1,
    "fieldname": "description",
    "fieldtype": "Small Text",
-   "label": "Description"
+   "in_list_view": 1,
+   "label": "Description",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,

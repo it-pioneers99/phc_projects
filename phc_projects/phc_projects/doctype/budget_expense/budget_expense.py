@@ -9,9 +9,54 @@ from frappe.utils import flt
 
 class BudgetExpense(Document):
 	def validate(self):
+		self.set_project_name()
+		self.validate_budget_item_projects()
+		self.sync_budget_expense_item_projects()
 		self.calculate_totals()
 		self.set_first_total_budget()
 		self.update_budget_usage()
+
+	def set_project_name(self):
+		if self.project:
+			self.project_name = frappe.db.get_value("Project", self.project, "project_name")
+		else:
+			self.project_name = None
+
+	def validate_budget_item_projects(self):
+		if not self.project:
+			return
+
+		for row in self.budget_expense_detail:
+			if not row.budget_item_name:
+				continue
+
+			item_project = frappe.db.get_value(
+				"Budget Expense Item", row.budget_item_name, "project"
+			)
+			if item_project and item_project != self.project:
+				row.budget_item_name = None
+				row.description = None
+
+	def sync_budget_expense_item_projects(self):
+		"""Set Project on Budget Expense Item when empty (helps PO/MR/PC link filtering)."""
+		if not self.project:
+			return
+
+		for row in self.budget_expense_detail:
+			if not row.budget_item_name:
+				continue
+			if not frappe.db.exists("Budget Expense Item", row.budget_item_name):
+				continue
+
+			item_project = frappe.db.get_value("Budget Expense Item", row.budget_item_name, "project")
+			if not item_project:
+				frappe.db.set_value(
+					"Budget Expense Item",
+					row.budget_item_name,
+					"project",
+					self.project,
+					update_modified=False,
+				)
 
 	def set_first_total_budget(self):
 		"""Capture initial total budget once and keep it immutable."""

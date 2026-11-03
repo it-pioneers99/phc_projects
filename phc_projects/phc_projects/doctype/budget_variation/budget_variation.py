@@ -9,9 +9,25 @@ from frappe.utils import flt
 
 class BudgetVariation(Document):
 	def validate(self):
+		self.validate_budget_item_projects()
 		self.calculate_totals()
 		self.update_budget_usage()
 		self.validate_variation_limits()
+
+	def validate_budget_item_projects(self):
+		if not self.project:
+			return
+
+		for row in self.budget_variation_detail:
+			if not row.budget_item_name:
+				continue
+
+			item_project = frappe.db.get_value(
+				"Budget Expense Item", row.budget_item_name, "project"
+			)
+			if item_project and item_project != self.project:
+				row.budget_item_name = None
+				row.description = None
 
 	def before_submit(self):
 		self.validate_variation_limits(on_submit=True)

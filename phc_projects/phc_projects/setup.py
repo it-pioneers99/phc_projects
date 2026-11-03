@@ -80,6 +80,7 @@ def after_migrate():
 			),
 		],
 		"Purchase Order Item": [
+			*_cost_center_allocation_item_fields(allow_on_submit=1),
 			dict(
 				fieldname="budget_expense_item",
 				label="Budget Expense Item",
@@ -92,6 +93,7 @@ def after_migrate():
 				in_list_view=1,
 				translatable=0,
 			),
+			_budget_expense_detail_description_field(),
 		],
 		"PC Clearance": [
 			dict(
@@ -117,6 +119,7 @@ def after_migrate():
 				in_list_view=1,
 				translatable=0,
 			),
+			_budget_expense_detail_description_field(),
 		],
 		"Purchase Invoice": [
 			dict(
@@ -142,6 +145,7 @@ def after_migrate():
 				in_list_view=1,
 				translatable=0,
 			),
+			_budget_expense_detail_description_field(),
 		],
 		"Material Request": [
 			dict(
@@ -155,6 +159,7 @@ def after_migrate():
 			),
 		],
 		"Material Request Item": [
+			*_cost_center_allocation_item_fields(allow_on_submit=0),
 			dict(
 				fieldname="budget_expense_item",
 				label="Budget Expense Item",
@@ -167,9 +172,62 @@ def after_migrate():
 				in_list_view=1,
 				translatable=0,
 			),
+			_budget_expense_detail_description_field(),
 		],
 	}
 	
 	create_custom_fields(custom_fields, update=True)
+	_remove_legacy_phc_cost_center_table_fields()
 	frappe.msgprint("Custom fields created successfully for PHC Projects")
+
+
+def _remove_legacy_phc_cost_center_table_fields():
+	"""Nested Table fields on item rows crash grid row forms (perm.js); storage is JSON."""
+	for dt in ("Purchase Order Item", "Material Request Item"):
+		fieldname = f"{dt}-phc_cost_center_allocations"
+		if frappe.db.exists("Custom Field", fieldname):
+			frappe.delete_doc("Custom Field", fieldname, ignore_permissions=True)
+	frappe.clear_cache(doctype="Purchase Order Item")
+	frappe.clear_cache(doctype="Material Request Item")
+
+
+def _cost_center_allocation_item_fields(allow_on_submit=0):
+	json_field = dict(
+		fieldname="phc_cost_center_allocations_json",
+		label="Cost Center Allocation JSON",
+		fieldtype="Long Text",
+		insert_after="cost_center",
+		hidden=1,
+		read_only=1,
+		translatable=0,
+	)
+	if allow_on_submit:
+		json_field["allow_on_submit"] = 1
+
+	return [
+		json_field,
+		dict(
+			fieldname="phc_cost_center_allocation_summary",
+			label="Cost Center Split",
+			fieldtype="Small Text",
+			insert_after="cost_center",
+			read_only=1,
+			in_list_view=1,
+			translatable=0,
+			description="Use the Cost Center Split button on the items grid to edit percentages.",
+		),
+	]
+
+
+def _budget_expense_detail_description_field():
+	return dict(
+		fieldname="budget_expense_detail_description",
+		label="Budget Expense Detail Description",
+		fieldtype="Small Text",
+		insert_after="budget_expense_item",
+		read_only=1,
+		depends_on="eval:doc.budget_expense_item",
+		in_list_view=1,
+		translatable=0,
+	)
 

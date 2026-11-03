@@ -104,7 +104,7 @@ def check_budget_for_item(project, budget_item, amount, doc_label):
 	total_budget = flt(budget_info["total_budget"])
 	used_po = flt(budget_info["used_po"])
 	used_pc = flt(budget_info["used_pc"])
-	_, committed = get_available_budget(total_budget, used_po, used_pc)
+	_available, committed = get_available_budget(total_budget, used_po, used_pc)
 
 	if committed + amount > total_budget:
 		throw_budget_exceeded(
