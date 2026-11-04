@@ -97,9 +97,17 @@ phc_projects.budget_expense_item_split.get_row_allocations = function (row) {
 	return [];
 };
 
+phc_projects.budget_expense_item_split.compact_allocations = function (allocations) {
+	return (allocations || []).map((alloc) => ({
+		budget_expense_item: alloc.budget_expense_item,
+		percentage: flt(alloc.percentage),
+	}));
+};
+
 phc_projects.budget_expense_item_split.set_row_allocations = function (row, allocations) {
-	row[JSON_FIELD] = allocations.length ? JSON.stringify(allocations) : "";
-	phc_projects.budget_expense_item_split.sync_allocation_summary(row, allocations);
+	const compact = phc_projects.budget_expense_item_split.compact_allocations(allocations);
+	row[JSON_FIELD] = compact.length ? JSON.stringify(compact) : "";
+	phc_projects.budget_expense_item_split.sync_allocation_summary(row, compact);
 };
 
 phc_projects.budget_expense_item_split.sync_allocation_summary = function (row, allocations) {
@@ -121,11 +129,6 @@ phc_projects.budget_expense_item_split.recalc_row_allocations = function (cdt, c
 	if (!allocations.length) {
 		return;
 	}
-
-	const line_amount = phc_projects.budget_expense_item_split.get_line_amount(row);
-	allocations.forEach((alloc) => {
-		alloc.allocated_amount = flt((line_amount * flt(alloc.percentage)) / 100, 2);
-	});
 	phc_projects.budget_expense_item_split.set_row_allocations(row, allocations);
 };
 
@@ -180,15 +183,8 @@ phc_projects.budget_expense_item_split.open_split_dialog = function (frm, cdt, c
 						in_list_view: 1,
 						reqd: 1,
 					},
-					{
-						fieldname: "allocated_amount",
-						fieldtype: "Currency",
-						label: __("Allocated Amount"),
-						in_list_view: 1,
-						read_only: 1,
-					},
 				],
-				data: existing.map((r) => ({ ...r })),
+				data: phc_projects.budget_expense_item_split.compact_allocations(existing),
 			},
 		],
 		primary_action_label: __("Update"),
@@ -213,17 +209,16 @@ phc_projects.budget_expense_item_split.open_split_dialog = function (frm, cdt, c
 				return;
 			}
 
-			const normalized = allocations.map((alloc) => ({
-				budget_expense_item: alloc.budget_expense_item,
-				percentage: flt(alloc.percentage),
-				allocated_amount: flt((line_amount * flt(alloc.percentage)) / 100, 2),
-			}));
-
-			phc_projects.budget_expense_item_split.set_row_allocations(row, normalized);
+			phc_projects.budget_expense_item_split.set_row_allocations(row, allocations);
 			frappe.model.set_value(cdt, cdn, JSON_FIELD, row[JSON_FIELD]);
 			frappe.model.set_value(cdt, cdn, SUMMARY_FIELD, row[SUMMARY_FIELD]);
-			if (normalized.length) {
-				frappe.model.set_value(cdt, cdn, "budget_expense_item", normalized[0].budget_expense_item);
+			if (allocations.length) {
+				frappe.model.set_value(
+					cdt,
+					cdn,
+					"budget_expense_item",
+					allocations[0].budget_expense_item
+				);
 			}
 			frm.refresh_field("items");
 			d.hide();
@@ -236,15 +231,6 @@ phc_projects.budget_expense_item_split.open_split_dialog = function (frm, cdt, c
 			filters: { project },
 		});
 	}
-
-	const table_field = d.fields_dict.allocations;
-	table_field.grid.wrapper.on("change", 'input[data-fieldname="percentage"]', () => {
-		(table_field.grid.grid_rows || []).forEach((grid_row) => {
-			const doc = grid_row.doc;
-			doc.allocated_amount = flt((line_amount * flt(doc.percentage)) / 100, 2);
-			grid_row.refresh_field("allocated_amount");
-		});
-	});
 
 	d.show();
 };

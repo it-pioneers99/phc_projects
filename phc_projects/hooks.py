@@ -159,6 +159,7 @@ doc_events = {
 	},
 	"Custom Comparison": {
 		"validate": "phc_projects.phc_projects.budget_expense_item_split.validate_transaction",
+		"before_submit": "phc_projects.phc_projects.budget_control.purchase_order_validation.validate_budget_on_custom_comparison_submit",
 	},
 	"PC Clearance": {
 		"before_submit": "phc_projects.phc_projects.budget_control.purchase_order_validation.validate_budget_on_pc_clearance_submit"

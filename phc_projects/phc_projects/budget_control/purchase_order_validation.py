@@ -5,6 +5,10 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
+from phc_projects.phc_projects.budget_split_usage import (
+	aggregate_budget_amounts,
+	get_used_po_amount_for_budget_item,
+)
 from phc_projects.phc_projects.doctype.budget_expense.budget_expense import (
 	_get_latest_submitted_budget_variation_name,
 )
@@ -42,11 +46,12 @@ def get_effective_budget_for_item(project, budget_item):
 
 		found = True
 		total_budget += flt(row.budget_item_cost)
-		used_po += flt(row.used_cost_po)
-		used_pc += flt(row.used_cost_pc)
 
 	if not found:
 		return None
+
+	used_po = get_used_po_amount_for_budget_item(project, budget_item)
+	used_pc = get_used_cost_pc_for_item(project, budget_item)
 
 	return {
 		"total_budget": total_budget,
@@ -112,6 +117,40 @@ def check_budget_for_item(project, budget_item, amount, doc_label):
 		)
 
 
+def get_used_cost_pc_for_item(project, budget_item_name):
+	pc_result = frappe.db.sql(
+		"""
+		SELECT COALESCE(SUM(pcd.amount), 0)
+		FROM `tabPC Clearance Detail` pcd
+		INNER JOIN `tabPC Clearance` pc ON pcd.parent = pc.name
+		WHERE pcd.budget_expense_item = %s
+		AND pc.project = %s
+		AND pc.docstatus = 1
+		""",
+		(budget_item_name, project),
+	)
+	return flt(pc_result[0][0] if pc_result else 0)
+
+
+def _validate_budget_map(budget_map, doc_label):
+	for (project, budget_item), amount in budget_map.items():
+		if not amount:
+			continue
+		check_budget_for_item(project, budget_item, amount, doc_label)
+
+
+def _require_split_or_budget_item(item, doc_label):
+	if item.get("phc_budget_expense_item_split_json"):
+		return
+	if not item.get("budget_expense_item"):
+		frappe.throw(
+			_("Budget Expense Item (or Budget Expense Split) is mandatory for item: {0}").format(
+				item.item_code or item.item_name
+			),
+			title=_("Budget Item Required"),
+		)
+
+
 def validate_budget_on_po_submit(doc, method):
 	"""
 	Prevent Purchase Order submission if budget is exceeded
@@ -121,26 +160,16 @@ def validate_budget_on_po_submit(doc, method):
 	if getattr(doc, "budget_expense_type", None) == "Not Projects":
 		return
 	
-	if not doc.project:
-		# If no project, skip budget validation
-		return
-	
-	# Collect PO amounts by budget item
-	budget_map = {}
-	
 	for item in doc.items:
-		if not item.budget_expense_item:
+		_require_split_or_budget_item(item, _("Purchase Order"))
+		if not item.project and not doc.project:
 			frappe.throw(
-				_("Budget Expense Item is mandatory for all items in Purchase Order. Please select Budget Expense Item for item: {0}").format(item.item_code or item.item_name),
-				title=_("Budget Item Required")
+				_("Project is required on Purchase Order or line for budget validation."),
+				title=_("Project Required"),
 			)
-		
-		budget_map.setdefault(item.budget_expense_item, 0)
-		budget_map[item.budget_expense_item] += flt(item.amount)
-	
-	# Validate each budget item
-	for budget_item, po_amount in budget_map.items():
-		check_budget_for_item(doc.project, budget_item, po_amount, _("Purchase Order"))
+
+	budget_map = aggregate_budget_amounts(doc.items, doc)
+	_validate_budget_map(budget_map, _("Purchase Order"))
 
 
 def validate_budget_on_material_request_submit(doc, method):
@@ -152,29 +181,36 @@ def validate_budget_on_material_request_submit(doc, method):
 	if getattr(doc, "budget_expense_type", None) == "Not Projects":
 		return
 
-	# Collect Material Request amounts by (project, budget item)
-	budget_map = {}
-
 	for item in doc.items:
-		if not item.budget_expense_item:
-			frappe.throw(
-				_("Budget Expense Item is mandatory for all items in Material Request. Please select Budget Expense Item for item: {0}").format(item.item_code or item.item_name),
-				title=_("Budget Item Required")
-			)
-
+		_require_split_or_budget_item(item, _("Material Request"))
 		if not item.project:
 			frappe.throw(
-				_("Project is mandatory for all items in Material Request when Budget Expense Type is Projects. Please set Project for item: {0}").format(item.item_code or item.item_name),
-				title=_("Project Required")
+				_("Project is mandatory for all items in Material Request when Budget Expense Type is Projects. Please set Project for item: {0}").format(
+					item.item_code or item.item_name
+				),
+				title=_("Project Required"),
 			)
 
-		key = (item.project, item.budget_expense_item)
-		budget_map.setdefault(key, 0)
-		budget_map[key] += flt(item.amount)
+	budget_map = aggregate_budget_amounts(doc.items, doc)
+	_validate_budget_map(budget_map, _("Material Request"))
 
-	# Validate each project + budget item
-	for (project, budget_item), mr_amount in budget_map.items():
-		check_budget_for_item(project, budget_item, mr_amount, _("Material Request"))
+
+def validate_budget_on_custom_comparison_submit(doc, method):
+	if getattr(doc, "budget_expense_type", None) == "Not Projects":
+		return
+
+	for item in doc.items:
+		_require_split_or_budget_item(item, _("Custom Comparison"))
+		if not item.project:
+			frappe.throw(
+				_("Project is mandatory on Custom Comparison items when Budget Expense Type is Projects. Item: {0}").format(
+					item.item_code or item.item_name
+				),
+				title=_("Project Required"),
+			)
+
+	budget_map = aggregate_budget_amounts(doc.items, doc)
+	_validate_budget_map(budget_map, _("Custom Comparison"))
 
 
 def validate_budget_on_pc_clearance_submit(doc, method):

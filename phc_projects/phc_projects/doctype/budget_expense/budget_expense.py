@@ -112,21 +112,13 @@ class BudgetExpense(Document):
 		self.total_difference = total_diff
 	
 	def get_used_cost_po(self, budget_item_name):
-		"""Get used cost from Purchase Orders"""
+		"""Get used cost from submitted Purchase Orders (respects budget expense split)."""
 		if not self.project:
 			return 0
-		
-		# Check both parent project and item project (item project takes precedence)
-		result = frappe.db.sql("""
-			SELECT COALESCE(SUM(poi.amount), 0)
-			FROM `tabPurchase Order Item` poi
-			INNER JOIN `tabPurchase Order` po ON poi.parent = po.name
-			WHERE poi.budget_expense_item = %s
-			AND (po.project = %s OR poi.project = %s)
-			AND po.docstatus = 1
-		""", (budget_item_name, self.project, self.project))
-		
-		return flt(result[0][0] if result else 0)
+
+		from phc_projects.phc_projects.budget_split_usage import get_used_po_amount_for_budget_item
+
+		return get_used_po_amount_for_budget_item(self.project, budget_item_name)
 	
 	def get_used_cost_pc(self, budget_item_name):
 		"""Get used cost from PC Clearance only"""

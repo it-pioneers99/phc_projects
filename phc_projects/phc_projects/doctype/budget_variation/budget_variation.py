@@ -105,19 +105,9 @@ class BudgetVariation(Document):
 		if not self.project:
 			return 0
 
-		result = frappe.db.sql(
-			"""
-			SELECT COALESCE(SUM(poi.amount), 0)
-			FROM `tabPurchase Order Item` poi
-			INNER JOIN `tabPurchase Order` po ON poi.parent = po.name
-			WHERE poi.budget_expense_item = %s
-			AND (po.project = %s OR poi.project = %s)
-			AND po.docstatus = 1
-		""",
-			(budget_item_name, self.project, self.project),
-		)
+		from phc_projects.phc_projects.budget_split_usage import get_used_po_amount_for_budget_item
 
-		return flt(result[0][0] if result else 0)
+		return get_used_po_amount_for_budget_item(self.project, budget_item_name)
 
 	def get_used_cost_pc(self, budget_item_name):
 		if not self.project:

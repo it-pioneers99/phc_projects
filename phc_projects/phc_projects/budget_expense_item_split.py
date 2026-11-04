@@ -94,7 +94,6 @@ def validate_row_allocations(doc, row):
 			{
 				"budget_expense_item": budget_expense_item,
 				"percentage": percentage,
-				"allocated_amount": flt(line_amount * percentage / 100, 2),
 			}
 		)
 
@@ -112,6 +111,36 @@ def validate_row_allocations(doc, row):
 	row.set(JSON_FIELD, json.dumps(normalized))
 	row.budget_expense_item = normalized[0]["budget_expense_item"]
 	sync_allocation_summary(row, normalized)
+
+
+def compact_split_allocations(allocations):
+	"""Store only budget item + percentage (amounts derived from line total when needed)."""
+	compact = []
+	for alloc in allocations or []:
+		if not isinstance(alloc, dict):
+			continue
+		budget_expense_item = alloc.get("budget_expense_item")
+		if not budget_expense_item:
+			continue
+		compact.append(
+			{
+				"budget_expense_item": budget_expense_item,
+				"percentage": flt(alloc.get("percentage")),
+			}
+		)
+	return compact
+
+
+def compact_split_json_string(raw):
+	if not raw:
+		return raw
+	try:
+		data = json.loads(raw) if isinstance(raw, str) else raw
+	except json.JSONDecodeError:
+		return raw
+	if not isinstance(data, list):
+		return raw
+	return json.dumps(compact_split_allocations(data))
 
 
 def get_row_allocations(row):
