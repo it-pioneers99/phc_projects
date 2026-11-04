@@ -7,6 +7,7 @@ const budget_expense_child_tables = {
 	"Purchase Order": "items",
 	"Purchase Invoice": "items",
 	"Material Request": "items",
+	"Custom Comparison": "items",
 	"PC Clearance": "clearance_details",
 };
 
@@ -19,6 +20,12 @@ function clear_budget_expense_items(frm, child_table) {
 		frappe.model.set_value(row.doctype, row.name, "budget_expense_item", "");
 		if (frappe.meta.has_field(row.doctype, "budget_expense_detail_description")) {
 			frappe.model.set_value(row.doctype, row.name, "budget_expense_detail_description", "");
+		}
+		if (frappe.meta.has_field(row.doctype, "phc_budget_expense_item_split_json")) {
+			frappe.model.set_value(row.doctype, row.name, "phc_budget_expense_item_split_json", "");
+		}
+		if (frappe.meta.has_field(row.doctype, "phc_budget_expense_item_split_summary")) {
+			frappe.model.set_value(row.doctype, row.name, "phc_budget_expense_item_split_summary", "");
 		}
 	});
 	frm.refresh_field(child_table);
@@ -64,6 +71,7 @@ const child_dt_map = {
 	"Purchase Order": "Purchase Order Item",
 	"Purchase Invoice": "Purchase Invoice Item",
 	"Material Request": "Material Request Item",
+	"Custom Comparison": "Custom Comparison Item",
 	"PC Clearance": "PC Clearance Detail",
 };
 

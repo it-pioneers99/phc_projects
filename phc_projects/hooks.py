@@ -51,6 +51,7 @@ doctype_js = {
 	"Purchase Order": "public/js/budget_expense_type.js",
 	"Purchase Invoice": "public/js/budget_expense_type.js",
 	"Material Request": "public/js/budget_expense_type.js",
+	"Custom Comparison": "public/js/budget_expense_type.js",
 	"PC Clearance": "public/js/budget_expense_type.js",
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
@@ -155,6 +156,9 @@ doc_events = {
 	"Material Request": {
 		"validate": "phc_projects.phc_projects.budget_expense_item_split.validate_transaction",
 		"before_submit": "phc_projects.phc_projects.budget_control.purchase_order_validation.validate_budget_on_material_request_submit",
+	},
+	"Custom Comparison": {
+		"validate": "phc_projects.phc_projects.budget_expense_item_split.validate_transaction",
 	},
 	"PC Clearance": {
 		"before_submit": "phc_projects.phc_projects.budget_control.purchase_order_validation.validate_budget_on_pc_clearance_submit"

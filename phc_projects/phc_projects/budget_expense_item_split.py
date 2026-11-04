@@ -12,10 +12,14 @@ SUMMARY_FIELD = "phc_budget_expense_item_split_summary"
 SUPPORTED_DOCTYPES = {
 	"Purchase Order": "items",
 	"Material Request": "items",
+	"Custom Comparison": "items",
 }
 
 
 def validate_transaction(doc, method=None):
+	if doc.docstatus > 0:
+		return
+
 	child_table = SUPPORTED_DOCTYPES.get(doc.doctype)
 	if not child_table:
 		return
@@ -168,5 +172,14 @@ def get_line_amount(row, parent_doc):
 	rate = flt(row.get("rate"))
 	if qty and rate:
 		return flt(qty * rate)
+
+	if row.doctype == "Custom Comparison Item":
+		selected_rate = flt(row.get("selected_rate"))
+		if qty and selected_rate:
+			return flt(qty * selected_rate)
+		for idx in range(1, 11):
+			price = flt(row.get(f"price_{idx}"))
+			if qty and price:
+				return flt(qty * price)
 
 	return flt(row.get("net_amount")) or flt(row.get("base_amount")) or 0

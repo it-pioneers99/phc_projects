@@ -92,8 +92,11 @@ def after_migrate():
 				in_list_view=1,
 				translatable=0,
 			),
-			*_budget_expense_item_split_fields(allow_on_submit=1),
+			*_budget_expense_item_split_fields(allow_on_submit=0),
 			_budget_expense_detail_description_field(),
+		],
+		"Custom Comparison Item": [
+			*_budget_expense_item_split_fields(allow_on_submit=0),
 		],
 		"PC Clearance": [
 			dict(
@@ -178,7 +181,42 @@ def after_migrate():
 	
 	create_custom_fields(custom_fields, update=True)
 	_remove_legacy_phc_cost_center_split_fields()
+	_sync_budget_item_split_field_properties()
 	frappe.msgprint("Custom fields created successfully for PHC Projects")
+
+
+def _sync_budget_item_split_field_properties():
+	"""Split is editable only before submit (draft)."""
+	split_fieldnames = (
+		"phc_budget_expense_item_split_json",
+		"phc_budget_expense_item_split_summary",
+	)
+	child_doctypes = (
+		"Purchase Order Item",
+		"Material Request Item",
+		"Custom Comparison Item",
+	)
+	projects_depends = "eval:parent.budget_expense_type=='Projects'"
+
+	for dt in child_doctypes:
+		for fieldname in split_fieldnames:
+			name = f"{dt}-{fieldname}"
+			if not frappe.db.exists("Custom Field", name):
+				continue
+			props = {
+				"allow_on_submit": 0,
+				"hidden": 1 if fieldname.endswith("_json") else 0,
+			}
+			# Summary visibility is driven client-side (draft + Projects only).
+			if fieldname == "phc_budget_expense_item_split_summary":
+				props["depends_on"] = ""
+				props["in_list_view"] = 1
+			else:
+				props["depends_on"] = projects_depends
+			frappe.db.set_value("Custom Field", name, props)
+
+	for dt in child_doctypes:
+		frappe.clear_cache(doctype=dt)
 
 
 def _remove_legacy_phc_cost_center_split_fields():
@@ -198,6 +236,7 @@ def _remove_legacy_phc_cost_center_split_fields():
 
 
 def _budget_expense_item_split_fields(allow_on_submit=0):
+	projects_depends = "eval:parent.budget_expense_type=='Projects'"
 	json_field = dict(
 		fieldname="phc_budget_expense_item_split_json",
 		label="Budget Item Split JSON",
@@ -205,6 +244,7 @@ def _budget_expense_item_split_fields(allow_on_submit=0):
 		insert_after="budget_expense_item",
 		hidden=1,
 		read_only=1,
+		depends_on=projects_depends,
 		translatable=0,
 	)
 	if allow_on_submit:
@@ -218,7 +258,7 @@ def _budget_expense_item_split_fields(allow_on_submit=0):
 		read_only=1,
 		in_list_view=1,
 		translatable=0,
-		description="Use the Budget Item Split button on the items grid to edit percentages.",
+		description="Use the Budget Item Split button on the items grid (before submit only).",
 	)
 	if allow_on_submit:
 		summary_field["allow_on_submit"] = 1

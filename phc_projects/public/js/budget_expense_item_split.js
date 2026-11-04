@@ -9,7 +9,51 @@ const SUMMARY_FIELD = "phc_budget_expense_item_split_summary";
 phc_projects.budget_expense_item_split.LINE_DOCTYPES = [
 	"Purchase Order Item",
 	"Material Request Item",
+	"Custom Comparison Item",
 ];
+
+phc_projects.budget_expense_item_split.PARENT_DOCTYPES = [
+	"Purchase Order",
+	"Material Request",
+	"Custom Comparison",
+];
+
+phc_projects.budget_expense_item_split.is_projects_draft = function (frm) {
+	if (!frm || !frm.doc) {
+		return false;
+	}
+	return frm.doc.budget_expense_type === "Projects" && frm.doc.docstatus === 0;
+};
+
+/** Split dialog / grid buttons: only before submit when type is Projects. */
+phc_projects.budget_expense_item_split.is_split_enabled = function (frm) {
+	return phc_projects.budget_expense_item_split.is_projects_draft(frm);
+};
+
+phc_projects.budget_expense_item_split.SPLIT_GRID_FIELDS = [
+	"phc_budget_expense_item_split_summary",
+	"phc_budget_expense_item_split_json",
+];
+
+phc_projects.budget_expense_item_split.sync_grid_split_visibility = function (frm) {
+	const grid = frm.fields_dict.items && frm.fields_dict.items.grid;
+	if (!grid) {
+		return;
+	}
+
+	const show = phc_projects.budget_expense_item_split.is_projects_draft(frm);
+	phc_projects.budget_expense_item_split.SPLIT_GRID_FIELDS.forEach((fieldname) => {
+		if (!frappe.meta.has_field(grid.doctype, fieldname)) {
+			return;
+		}
+		const hidden = show ? 0 : 1;
+		grid.update_docfield_property(fieldname, "hidden", hidden);
+		if (fieldname === "phc_budget_expense_item_split_summary") {
+			grid.update_docfield_property(fieldname, "in_list_view", show ? 1 : 0);
+		}
+	});
+	grid.refresh();
+};
 
 phc_projects.budget_expense_item_split.get_line_project = function (frm, row) {
 	return row.project || frm.doc.project;
@@ -24,6 +68,18 @@ phc_projects.budget_expense_item_split.get_line_amount = function (row) {
 	const rate = flt(row.rate);
 	if (qty && rate) {
 		return flt(qty * rate);
+	}
+	if (row.doctype === "Custom Comparison Item") {
+		const selected_rate = flt(row.selected_rate);
+		if (qty && selected_rate) {
+			return flt(qty * selected_rate);
+		}
+		for (let i = 1; i <= 10; i += 1) {
+			const price = flt(row[`price_${i}`]);
+			if (qty && price) {
+				return flt(qty * price);
+			}
+		}
 	}
 	return flt(row.net_amount) || flt(row.base_amount) || 0;
 };
@@ -74,6 +130,11 @@ phc_projects.budget_expense_item_split.recalc_row_allocations = function (cdt, c
 };
 
 phc_projects.budget_expense_item_split.open_split_dialog = function (frm, cdt, cdn) {
+	if (!phc_projects.budget_expense_item_split.is_split_enabled(frm)) {
+		frappe.msgprint(__("Budget item split can only be edited before submit when Budget Expense Type is Projects."));
+		return;
+	}
+
 	const row = locals[cdt][cdn];
 	const project = phc_projects.budget_expense_item_split.get_line_project(frm, row);
 
@@ -189,14 +250,16 @@ phc_projects.budget_expense_item_split.open_split_dialog = function (frm, cdt, c
 };
 
 phc_projects.budget_expense_item_split.add_row_split_button = function (frm, cdt, cdn) {
+	if (!phc_projects.budget_expense_item_split.is_split_enabled(frm)) {
+		return;
+	}
+
 	const grid_form = frappe.ui.form.get_open_grid_form();
 	if (!grid_form || !grid_form.row || grid_form.row.doc.name !== cdn) {
 		return;
 	}
 	const toolbar = grid_form.wrapper.find(".grid-form-heading .toolbar");
-	if (toolbar.find(".phc-bei-split-btn").length) {
-		return;
-	}
+	toolbar.find(".phc-bei-split-btn").remove();
 	$(
 		`<button type="button" class="btn btn-secondary btn-sm phc-bei-split-btn">${__(
 			"Budget Item Split"
@@ -217,31 +280,62 @@ function bind_budget_expense_item_split_row_handlers(child_doctype) {
 	};
 	amount_fields.forEach((fieldname) => {
 		handlers[fieldname] = function (frm, cdt, cdn) {
+			if (!phc_projects.budget_expense_item_split.is_split_enabled(frm)) {
+				return;
+			}
 			phc_projects.budget_expense_item_split.recalc_row_allocations(cdt, cdn);
 			const row = locals[cdt][cdn];
 			frappe.model.set_value(cdt, cdn, JSON_FIELD, row[JSON_FIELD] || "");
 			frappe.model.set_value(cdt, cdn, SUMMARY_FIELD, row[SUMMARY_FIELD] || "");
 		};
 	});
+
+	if (child_doctype === "Custom Comparison Item") {
+		["selected_rate", "price_1", "price_2", "price_3", "price_4", "price_5"].forEach((fieldname) => {
+			handlers[fieldname] = function (frm, cdt, cdn) {
+				if (!phc_projects.budget_expense_item_split.is_split_enabled(frm)) {
+					return;
+				}
+				phc_projects.budget_expense_item_split.recalc_row_allocations(cdt, cdn);
+				const row = locals[cdt][cdn];
+				frappe.model.set_value(cdt, cdn, JSON_FIELD, row[JSON_FIELD] || "");
+				frappe.model.set_value(cdt, cdn, SUMMARY_FIELD, row[SUMMARY_FIELD] || "");
+			};
+		});
+	}
 	frappe.ui.form.on(child_doctype, handlers);
 }
 
 phc_projects.budget_expense_item_split.LINE_DOCTYPES.forEach(bind_budget_expense_item_split_row_handlers);
 
-["Purchase Order", "Material Request"].forEach((doctype) => {
+phc_projects.budget_expense_item_split.PARENT_DOCTYPES.forEach((doctype) => {
 	frappe.ui.form.on(doctype, {
+		onload(frm) {
+			phc_projects.budget_expense_item_split.sync_grid_split_visibility(frm);
+		},
 		refresh(frm) {
-			if (frm.doc.budget_expense_type && frm.doc.budget_expense_type !== "Projects") {
-				return;
-			}
+			phc_projects.budget_expense_item_split.sync_grid_split_visibility(frm);
+
 			const grid = frm.fields_dict.items && frm.fields_dict.items.grid;
-			if (!grid || grid.__phc_bei_split_button) {
+			if (!grid) {
 				return;
 			}
-			grid.__phc_bei_split_button = true;
+
+			const split_label = __("Budget Item Split");
+			if (!phc_projects.budget_expense_item_split.is_split_enabled(frm)) {
+				if (grid.custom_buttons && grid.custom_buttons[split_label]) {
+					grid.custom_buttons[split_label].addClass("hidden");
+				}
+				return;
+			}
+
+			if (grid.custom_buttons && grid.custom_buttons[split_label]) {
+				grid.custom_buttons[split_label].removeClass("hidden");
+				return;
+			}
 
 			grid.add_custom_button(
-				__("Budget Item Split"),
+				split_label,
 				() => {
 					const selected = grid.get_selected_children();
 					let cdt;
@@ -260,6 +354,9 @@ phc_projects.budget_expense_item_split.LINE_DOCTYPES.forEach(bind_budget_expense
 				},
 				"top"
 			);
+		},
+		budget_expense_type(frm) {
+			phc_projects.budget_expense_item_split.sync_grid_split_visibility(frm);
 		},
 	});
 });

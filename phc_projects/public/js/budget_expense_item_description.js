@@ -306,6 +306,7 @@ const TRANSACTION_BUDGET_ITEM_ROWS = [
 	"Purchase Order Item",
 	"Purchase Invoice Item",
 	"Material Request Item",
+	"Custom Comparison Item",
 	"PC Clearance Detail",
 ];
 
@@ -328,6 +329,7 @@ const PARENT_DOCTYPES = [
 	{ doctype: "Purchase Order", child_table: "items" },
 	{ doctype: "Purchase Invoice", child_table: "items" },
 	{ doctype: "Material Request", child_table: "items" },
+	{ doctype: "Custom Comparison", child_table: "items" },
 	{ doctype: "PC Clearance", child_table: "clearance_details" },
 ];
 
