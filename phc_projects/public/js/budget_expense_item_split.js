@@ -148,6 +148,7 @@ phc_projects.budget_expense_item_split.open_split_dialog = function (frm, cdt, c
 
 	const line_amount = phc_projects.budget_expense_item_split.get_line_amount(row);
 	const existing = phc_projects.budget_expense_item_split.get_row_allocations(row);
+	let pricing_by_item = {};
 
 	const d = new frappe.ui.Dialog({
 		title: __("Budget Expense Split — {0}", [row.item_code || row.item_name || __("Item")]),
@@ -182,6 +183,34 @@ phc_projects.budget_expense_item_split.open_split_dialog = function (frm, cdt, c
 						label: __("Percentage"),
 						in_list_view: 1,
 						reqd: 1,
+					},
+					{
+						fieldname: "unit_cost",
+						fieldtype: "Currency",
+						label: __("Unit Cost"),
+						in_list_view: 1,
+						read_only: 1,
+					},
+					{
+						fieldname: "budget_item_cost",
+						fieldtype: "Currency",
+						label: __("Budget Cost"),
+						in_list_view: 1,
+						read_only: 1,
+					},
+					{
+						fieldname: "available_budget",
+						fieldtype: "Currency",
+						label: __("Available"),
+						in_list_view: 1,
+						read_only: 1,
+					},
+					{
+						fieldname: "split_amount",
+						fieldtype: "Currency",
+						label: __("Split Amount"),
+						in_list_view: 1,
+						read_only: 1,
 					},
 				],
 				data: phc_projects.budget_expense_item_split.compact_allocations(existing),
@@ -225,14 +254,89 @@ phc_projects.budget_expense_item_split.open_split_dialog = function (frm, cdt, c
 		},
 	});
 
+	const refresh_split_pricing_rows = () => {
+		const grid = d.fields_dict.allocations.grid;
+		(grid.grid_rows || []).forEach((grid_row) => {
+			phc_projects.budget_expense_item_split.apply_pricing_to_grid_row(
+				grid_row,
+				pricing_by_item,
+				line_amount
+			);
+		});
+	};
+
+	phc_projects.budget_expense_item_split.fetch_split_pricing(
+		project,
+		existing.map((row) => row.budget_expense_item).filter(Boolean),
+		line_amount
+	).then((pricing) => {
+		pricing_by_item = pricing || {};
+		refresh_split_pricing_rows();
+	});
+
 	if (project) {
-		d.fields_dict.allocations.grid.get_field("budget_expense_item").get_query = () => ({
+		const bei_field = d.fields_dict.allocations.grid.get_field("budget_expense_item");
+		bei_field.get_query = () => ({
 			query: "phc_projects.phc_projects.budget_expense_utils.budget_expense_item_query",
 			filters: { project },
 		});
 	}
 
+	const alloc_grid = d.fields_dict.allocations.grid;
+	alloc_grid.wrapper.on(
+		"change",
+		'input[data-fieldname="budget_expense_item"], input[data-fieldname="percentage"]',
+		() => {
+			const items = (alloc_grid.get_data() || [])
+				.map((row) => row.budget_expense_item)
+				.filter(Boolean);
+			phc_projects.budget_expense_item_split.fetch_split_pricing(project, items, line_amount).then(
+				(pricing) => {
+					pricing_by_item = pricing || {};
+					refresh_split_pricing_rows();
+				}
+			);
+		}
+	);
+
 	d.show();
+};
+
+phc_projects.budget_expense_item_split.fetch_split_pricing = function (
+	project,
+	budget_expense_items,
+	line_amount
+) {
+	if (!project) {
+		return Promise.resolve({});
+	}
+	return frappe
+		.call({
+			method: "phc_projects.phc_projects.budget_expense_utils.get_budget_items_split_pricing",
+			args: {
+				project,
+				budget_expense_items: budget_expense_items || [],
+				line_amount: flt(line_amount),
+			},
+		})
+		.then((r) => r.message || {});
+};
+
+phc_projects.budget_expense_item_split.apply_pricing_to_grid_row = function (
+	grid_row,
+	pricing_by_item,
+	line_amount
+) {
+	const doc = grid_row.doc;
+	const pricing = pricing_by_item[doc.budget_expense_item] || {};
+	doc.unit_cost = flt(pricing.unit_cost);
+	doc.budget_item_cost = flt(pricing.budget_item_cost);
+	doc.available_budget = flt(pricing.available_budget);
+	doc.split_amount = flt((line_amount * flt(doc.percentage)) / 100, 2);
+	grid_row.refresh_field("unit_cost");
+	grid_row.refresh_field("budget_item_cost");
+	grid_row.refresh_field("available_budget");
+	grid_row.refresh_field("split_amount");
 };
 
 phc_projects.budget_expense_item_split.add_row_split_button = function (frm, cdt, cdn) {

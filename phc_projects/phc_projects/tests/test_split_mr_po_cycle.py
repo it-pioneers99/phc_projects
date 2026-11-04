@@ -11,6 +11,69 @@ from phc_projects.phc_projects.budget_split_usage import (
 )
 
 
+def check_split_vs_budget_prices(material_request=None):
+	"""Compare MR line split amounts to Budget Expense item costs / available budget."""
+	from phc_projects.phc_projects.budget_control.purchase_order_validation import (
+		get_available_budget,
+		get_effective_budget_for_item,
+	)
+	from phc_projects.phc_projects.budget_expense_utils import get_budget_items_split_pricing
+	from phc_projects.phc_projects.budget_split_usage import get_budget_allocations_for_item_row
+
+	frappe.set_user("Administrator")
+	if not material_request:
+		material_request = frappe.db.get_value(
+			"Material Request",
+			{"budget_expense_type": "Projects", "docstatus": ["<", 2]},
+			"name",
+			order_by="creation desc",
+		)
+	if not material_request:
+		return {"ok": False, "error": "No Material Request found"}
+
+	mr = frappe.get_doc("Material Request", material_request)
+	if mr.budget_expense_type != "Projects":
+		return {"ok": False, "error": f"{material_request} is not Projects type"}
+
+	rows_report = []
+	all_ok = True
+	for item in mr.items:
+		project = item.project or mr.project
+		if not project:
+			continue
+		line_parts = get_budget_allocations_for_item_row(item, mr)
+		item_names = [p["budget_expense_item"] for p in line_parts]
+		pricing = get_budget_items_split_pricing(project, item_names, item.amount)
+		for part in line_parts:
+			bei = part["budget_expense_item"]
+			amount = flt(part["amount"])
+			p = pricing.get(bei) or {}
+			budget_info = get_effective_budget_for_item(project, bei) or {}
+			total = flt(budget_info.get("total_budget") or p.get("budget_item_cost"))
+			used_po = flt(budget_info.get("used_po") or p.get("used_cost_po"))
+			used_pc = flt(budget_info.get("used_cost_pc") or p.get("used_cost_pc"))
+			available, _ = get_available_budget(total, used_po, used_pc)
+			fits = amount <= available + 0.01
+			all_ok = all_ok and fits
+			rows_report.append(
+				{
+					"item_row": item.idx,
+					"budget_expense_item": bei,
+					"split_amount": amount,
+					"unit_cost": flt(p.get("unit_cost")),
+					"budget_item_cost": total,
+					"available_budget": available,
+					"within_budget": fits,
+				}
+			)
+
+	return {
+		"ok": all_ok,
+		"material_request": material_request,
+		"rows": rows_report,
+	}
+
+
 def run_material_request_with_split(line_amount=1500, pct_a=35, pct_b=65):
 	"""Create and save a draft Material Request with budget expense split; return verification."""
 	frappe.set_user("Administrator")
