@@ -29,7 +29,7 @@ app_license = "mit"
 # app_include_js = "/assets/phc_projects/js/phc_projects.js"
 app_include_js = [
 	"/assets/phc_projects/js/budget_expense_item_description.js",
-	"/assets/phc_projects/js/cost_center_allocation.js",
+	"/assets/phc_projects/js/budget_expense_item_split.js",
 ]
 
 # include js, css files in header of web template
@@ -149,11 +149,11 @@ override_doctype_class = {
 
 doc_events = {
 	"Purchase Order": {
-		"validate": "phc_projects.phc_projects.cost_center_allocation.validate_transaction",
+		"validate": "phc_projects.phc_projects.budget_expense_item_split.validate_transaction",
 		"before_submit": "phc_projects.phc_projects.budget_control.purchase_order_validation.validate_budget_on_po_submit",
 	},
 	"Material Request": {
-		"validate": "phc_projects.phc_projects.cost_center_allocation.validate_transaction",
+		"validate": "phc_projects.phc_projects.budget_expense_item_split.validate_transaction",
 		"before_submit": "phc_projects.phc_projects.budget_control.purchase_order_validation.validate_budget_on_material_request_submit",
 	},
 	"PC Clearance": {

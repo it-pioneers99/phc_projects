@@ -80,7 +80,6 @@ def after_migrate():
 			),
 		],
 		"Purchase Order Item": [
-			*_cost_center_allocation_item_fields(allow_on_submit=1),
 			dict(
 				fieldname="budget_expense_item",
 				label="Budget Expense Item",
@@ -93,6 +92,7 @@ def after_migrate():
 				in_list_view=1,
 				translatable=0,
 			),
+			*_budget_expense_item_split_fields(allow_on_submit=1),
 			_budget_expense_detail_description_field(),
 		],
 		"PC Clearance": [
@@ -159,7 +159,6 @@ def after_migrate():
 			),
 		],
 		"Material Request Item": [
-			*_cost_center_allocation_item_fields(allow_on_submit=0),
 			dict(
 				fieldname="budget_expense_item",
 				label="Budget Expense Item",
@@ -172,31 +171,38 @@ def after_migrate():
 				in_list_view=1,
 				translatable=0,
 			),
+			*_budget_expense_item_split_fields(allow_on_submit=0),
 			_budget_expense_detail_description_field(),
 		],
 	}
 	
 	create_custom_fields(custom_fields, update=True)
-	_remove_legacy_phc_cost_center_table_fields()
+	_remove_legacy_phc_cost_center_split_fields()
 	frappe.msgprint("Custom fields created successfully for PHC Projects")
 
 
-def _remove_legacy_phc_cost_center_table_fields():
-	"""Nested Table fields on item rows crash grid row forms (perm.js); storage is JSON."""
+def _remove_legacy_phc_cost_center_split_fields():
+	"""Remove deprecated cost center split fields (replaced by budget item split)."""
+	legacy_fieldnames = (
+		"phc_cost_center_allocations",
+		"phc_cost_center_allocations_json",
+		"phc_cost_center_allocation_summary",
+	)
 	for dt in ("Purchase Order Item", "Material Request Item"):
-		fieldname = f"{dt}-phc_cost_center_allocations"
-		if frappe.db.exists("Custom Field", fieldname):
-			frappe.delete_doc("Custom Field", fieldname, ignore_permissions=True)
+		for fieldname in legacy_fieldnames:
+			custom_field = f"{dt}-{fieldname}"
+			if frappe.db.exists("Custom Field", custom_field):
+				frappe.delete_doc("Custom Field", custom_field, ignore_permissions=True)
 	frappe.clear_cache(doctype="Purchase Order Item")
 	frappe.clear_cache(doctype="Material Request Item")
 
 
-def _cost_center_allocation_item_fields(allow_on_submit=0):
+def _budget_expense_item_split_fields(allow_on_submit=0):
 	json_field = dict(
-		fieldname="phc_cost_center_allocations_json",
-		label="Cost Center Allocation JSON",
+		fieldname="phc_budget_expense_item_split_json",
+		label="Budget Item Split JSON",
 		fieldtype="Long Text",
-		insert_after="cost_center",
+		insert_after="budget_expense_item",
 		hidden=1,
 		read_only=1,
 		translatable=0,
@@ -204,19 +210,20 @@ def _cost_center_allocation_item_fields(allow_on_submit=0):
 	if allow_on_submit:
 		json_field["allow_on_submit"] = 1
 
-	return [
-		json_field,
-		dict(
-			fieldname="phc_cost_center_allocation_summary",
-			label="Cost Center Split",
-			fieldtype="Small Text",
-			insert_after="cost_center",
-			read_only=1,
-			in_list_view=1,
-			translatable=0,
-			description="Use the Cost Center Split button on the items grid to edit percentages.",
-		),
-	]
+	summary_field = dict(
+		fieldname="phc_budget_expense_item_split_summary",
+		label="Budget Item Split",
+		fieldtype="Small Text",
+		insert_after="budget_expense_item",
+		read_only=1,
+		in_list_view=1,
+		translatable=0,
+		description="Use the Budget Item Split button on the items grid to edit percentages.",
+	)
+	if allow_on_submit:
+		summary_field["allow_on_submit"] = 1
+
+	return [json_field, summary_field]
 
 
 def _budget_expense_detail_description_field():
