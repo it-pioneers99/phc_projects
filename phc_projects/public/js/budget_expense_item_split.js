@@ -131,7 +131,7 @@ phc_projects.budget_expense_item_split.recalc_row_allocations = function (cdt, c
 
 phc_projects.budget_expense_item_split.open_split_dialog = function (frm, cdt, cdn) {
 	if (!phc_projects.budget_expense_item_split.is_split_enabled(frm)) {
-		frappe.msgprint(__("Budget item split can only be edited before submit when Budget Expense Type is Projects."));
+		frappe.msgprint(__("Budget expense split can only be edited before submit when Budget Expense Type is Projects."));
 		return;
 	}
 
@@ -147,7 +147,7 @@ phc_projects.budget_expense_item_split.open_split_dialog = function (frm, cdt, c
 	const existing = phc_projects.budget_expense_item_split.get_row_allocations(row);
 
 	const d = new frappe.ui.Dialog({
-		title: __("Budget Item Split — {0}", [row.item_code || row.item_name || __("Item")]),
+		title: __("Budget Expense Split — {0}", [row.item_code || row.item_name || __("Item")]),
 		size: "large",
 		fields: [
 			{
@@ -262,7 +262,7 @@ phc_projects.budget_expense_item_split.add_row_split_button = function (frm, cdt
 	toolbar.find(".phc-bei-split-btn").remove();
 	$(
 		`<button type="button" class="btn btn-secondary btn-sm phc-bei-split-btn">${__(
-			"Budget Item Split"
+			"Budget Expense Split"
 		)}</button>`
 	)
 		.insertBefore(toolbar.find(".row-actions"))
@@ -321,7 +321,7 @@ phc_projects.budget_expense_item_split.PARENT_DOCTYPES.forEach((doctype) => {
 				return;
 			}
 
-			const split_label = __("Budget Item Split");
+			const split_label = __("Budget Expense Split");
 			if (!phc_projects.budget_expense_item_split.is_split_enabled(frm)) {
 				if (grid.custom_buttons && grid.custom_buttons[split_label]) {
 					grid.custom_buttons[split_label].addClass("hidden");

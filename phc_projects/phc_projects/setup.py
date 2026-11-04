@@ -211,6 +211,7 @@ def _sync_budget_item_split_field_properties():
 			if fieldname == "phc_budget_expense_item_split_summary":
 				props["depends_on"] = ""
 				props["in_list_view"] = 1
+				props["label"] = "Budget Expense Split"
 			else:
 				props["depends_on"] = projects_depends
 			frappe.db.set_value("Custom Field", name, props)
@@ -239,7 +240,7 @@ def _budget_expense_item_split_fields(allow_on_submit=0):
 	projects_depends = "eval:parent.budget_expense_type=='Projects'"
 	json_field = dict(
 		fieldname="phc_budget_expense_item_split_json",
-		label="Budget Item Split JSON",
+		label="Budget Expense Split JSON",
 		fieldtype="Long Text",
 		insert_after="budget_expense_item",
 		hidden=1,
@@ -252,13 +253,13 @@ def _budget_expense_item_split_fields(allow_on_submit=0):
 
 	summary_field = dict(
 		fieldname="phc_budget_expense_item_split_summary",
-		label="Budget Item Split",
+		label="Budget Expense Split",
 		fieldtype="Small Text",
 		insert_after="budget_expense_item",
 		read_only=1,
 		in_list_view=1,
 		translatable=0,
-		description="Use the Budget Item Split button on the items grid (before submit only).",
+		description="Use the Budget Expense Split button on the items grid (before submit only).",
 	)
 	if allow_on_submit:
 		summary_field["allow_on_submit"] = 1

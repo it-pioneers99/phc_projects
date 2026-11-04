@@ -5,3 +5,4 @@
 [post_model_sync]
 phc_projects.patches.v1_0.backfill_budget_expense_project_name
 phc_projects.patches.v1_0.backfill_budget_expense_item_project
+phc_projects.patches.v1_0.migrate_cost_center_split_to_budget_item_split
